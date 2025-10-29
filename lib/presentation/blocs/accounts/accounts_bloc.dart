@@ -1,14 +1,25 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:penpenny/domain/entities/account.dart';
-import 'package:penpenny/domain/repositories/account_repository.dart';
+import 'package:penpenny/domain/usecases/account/create_account.dart' as account_create_usecase;
+import 'package:penpenny/domain/usecases/account/delete_account.dart' as account_delete_usecase;
+import 'package:penpenny/domain/usecases/account/get_all_accounts.dart';
+import 'package:penpenny/domain/usecases/account/update_account.dart' as account_update_usecase;
 
 part 'accounts_event.dart';
 part 'accounts_state.dart';
 
 class AccountsBloc extends Bloc<AccountsEvent, AccountsState> {
-  final AccountRepository repository;
+  final GetAllAccounts getAllAccounts;
+  final account_create_usecase.CreateAccount createAccount;
+  final account_update_usecase.UpdateAccount updateAccount;
+  final account_delete_usecase.DeleteAccount deleteAccount;
 
-  AccountsBloc(this.repository) : super(AccountsInitial()) {
+  AccountsBloc({
+    required this.getAllAccounts,
+    required this.createAccount,
+    required this.updateAccount,
+    required this.deleteAccount,
+  }) : super(AccountsInitial()) {
     on<LoadAccounts>(_onLoadAccounts);
     on<CreateAccount>(_onCreateAccount);
     on<UpdateAccount>(_onUpdateAccount);
@@ -21,7 +32,7 @@ class AccountsBloc extends Bloc<AccountsEvent, AccountsState> {
   ) async {
     try {
       emit(AccountsLoading());
-      final accounts = await repository.getAllAccounts();
+      final accounts = await getAllAccounts();
       emit(AccountsLoaded(accounts));
     } catch (e) {
       emit(AccountsError(e.toString()));
@@ -33,7 +44,7 @@ class AccountsBloc extends Bloc<AccountsEvent, AccountsState> {
     Emitter<AccountsState> emit,
   ) async {
     try {
-      await repository.createAccount(event.account);
+      await createAccount(event.account);
       add(LoadAccounts());
     } catch (e) {
       emit(AccountsError(e.toString()));
@@ -45,7 +56,7 @@ class AccountsBloc extends Bloc<AccountsEvent, AccountsState> {
     Emitter<AccountsState> emit,
   ) async {
     try {
-      await repository.updateAccount(event.account);
+      await updateAccount(event.account);
       add(LoadAccounts());
     } catch (e) {
       emit(AccountsError(e.toString()));
@@ -57,7 +68,7 @@ class AccountsBloc extends Bloc<AccountsEvent, AccountsState> {
     Emitter<AccountsState> emit,
   ) async {
     try {
-      await repository.deleteAccount(event.accountId);
+      await deleteAccount(event.accountId);
       add(LoadAccounts());
     } catch (e) {
       emit(AccountsError(e.toString()));

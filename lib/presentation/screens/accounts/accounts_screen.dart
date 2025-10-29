@@ -196,7 +196,10 @@ class _AccountsScreenState extends State<AccountsScreen> {
                                   WidgetsBinding.instance.addPostFrameCallback((_) {
                                     showDialog(
                                       context: context,
-                                      builder: (builder) => AccountFormDialog(account: account),
+                                      builder: (builder) => BlocProvider.value(
+                                        value: context.read<AccountsBloc>(),
+                                        child: AccountFormDialog(account: account),
+                                      ),
                                     );
                                   });
                                 },
@@ -268,7 +271,10 @@ class _AccountsScreenState extends State<AccountsScreen> {
         onPressed: () {
           showDialog(
             context: context,
-            builder: (builder) => const AccountFormDialog(),
+            builder: (builder) => BlocProvider.value(
+              value: context.read<AccountsBloc>(),
+              child: const AccountFormDialog(),
+            ),
           );
         },
         child: const Icon(Icons.add),

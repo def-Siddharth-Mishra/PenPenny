@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 import 'package:penpenny/core/data/app_icons.dart';
 import 'package:penpenny/core/events/global_events.dart';
 import 'package:penpenny/domain/entities/account.dart';
@@ -44,7 +45,7 @@ class _AccountFormState extends State<AccountFormDialog> {
     }
   }
 
-  void onSave(context) async {
+  void onSave(BuildContext context) async {
     if (widget.account != null) {
       context.read<AccountsBloc>().add(UpdateAccount(_account!));
     } else {

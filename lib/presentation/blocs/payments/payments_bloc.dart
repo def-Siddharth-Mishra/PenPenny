@@ -1,17 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:penpenny/domain/entities/account.dart';
-import 'package:penpenny/domain/entities/category.dart';
 import 'package:penpenny/domain/entities/payment.dart';
-import 'package:penpenny/domain/repositories/payment_repository.dart';
+import 'package:penpenny/domain/usecases/payment/create_payment.dart' as payment_create_usecase;
+import 'package:penpenny/domain/usecases/payment/delete_payment.dart' as payment_delete_usecase;
+import 'package:penpenny/domain/usecases/payment/get_all_payments.dart';
+import 'package:penpenny/domain/usecases/payment/update_payment.dart' as payment_update_usecase;
 
 part 'payments_event.dart';
 part 'payments_state.dart';
 
 class PaymentsBloc extends Bloc<PaymentsEvent, PaymentsState> {
-  final PaymentRepository repository;
+  final GetAllPayments getAllPayments;
+  final payment_create_usecase.CreatePayment createPayment;
+  final payment_update_usecase.UpdatePayment updatePayment;
+  final payment_delete_usecase.DeletePayment deletePayment;
 
-  PaymentsBloc(this.repository) : super(PaymentsInitial()) {
+  PaymentsBloc({
+    required this.getAllPayments,
+    required this.createPayment,
+    required this.updatePayment,
+    required this.deletePayment,
+  }) : super(PaymentsInitial()) {
     on<LoadPayments>(_onLoadPayments);
     on<LoadPaymentsByDateRange>(_onLoadPaymentsByDateRange);
     on<CreatePayment>(_onCreatePayment);
@@ -25,7 +34,7 @@ class PaymentsBloc extends Bloc<PaymentsEvent, PaymentsState> {
   ) async {
     try {
       emit(PaymentsLoading());
-      final payments = await repository.getAllPayments();
+      final payments = await getAllPayments();
       
       // Calculate income and expense
       double income = 0;
@@ -50,15 +59,19 @@ class PaymentsBloc extends Bloc<PaymentsEvent, PaymentsState> {
   ) async {
     try {
       emit(PaymentsLoading());
-      final payments = await repository.getPaymentsByDateRange(
-        event.dateRange.start,
-        event.dateRange.end,
-      );
+      // Note: This would need a specific use case for date range filtering
+      final payments = await getAllPayments();
+      
+      // Filter by date range
+      final filteredPayments = payments.where((payment) {
+        return payment.datetime.isAfter(event.dateRange.start) &&
+               payment.datetime.isBefore(event.dateRange.end.add(const Duration(days: 1)));
+      }).toList();
       
       // Calculate income and expense
       double income = 0;
       double expense = 0;
-      for (var payment in payments) {
+      for (var payment in filteredPayments) {
         if (payment.type == PaymentType.credit) {
           income += payment.amount;
         } else {
@@ -66,7 +79,7 @@ class PaymentsBloc extends Bloc<PaymentsEvent, PaymentsState> {
         }
       }
       
-      emit(PaymentsLoaded(payments, income, expense));
+      emit(PaymentsLoaded(filteredPayments, income, expense));
     } catch (e) {
       emit(PaymentsError(e.toString()));
     }
@@ -77,7 +90,7 @@ class PaymentsBloc extends Bloc<PaymentsEvent, PaymentsState> {
     Emitter<PaymentsState> emit,
   ) async {
     try {
-      await repository.createPayment(event.payment);
+      await createPayment(event.payment);
       add(LoadPayments());
     } catch (e) {
       emit(PaymentsError(e.toString()));
@@ -89,7 +102,7 @@ class PaymentsBloc extends Bloc<PaymentsEvent, PaymentsState> {
     Emitter<PaymentsState> emit,
   ) async {
     try {
-      await repository.updatePayment(event.payment);
+      await updatePayment(event.payment);
       add(LoadPayments());
     } catch (e) {
       emit(PaymentsError(e.toString()));
@@ -101,7 +114,7 @@ class PaymentsBloc extends Bloc<PaymentsEvent, PaymentsState> {
     Emitter<PaymentsState> emit,
   ) async {
     try {
-      await repository.deletePayment(event.paymentId);
+      await deletePayment(event.paymentId);
       add(LoadPayments());
     } catch (e) {
       emit(PaymentsError(e.toString()));

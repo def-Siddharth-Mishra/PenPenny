@@ -42,7 +42,14 @@ class _HomeScreenState extends State<HomeScreen> {
   void openAddPaymentPage(PaymentType type) async {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (builder) => PaymentFormScreen(type: type),
+        builder: (builder) => MultiBlocProvider(
+          providers: [
+            BlocProvider.value(value: context.read<AccountsBloc>()),
+            BlocProvider.value(value: context.read<CategoriesBloc>()),
+            BlocProvider.value(value: context.read<PaymentsBloc>()),
+          ],
+          child: PaymentFormScreen(type: type),
+        ),
       ),
     );
   }
@@ -256,9 +263,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         onTap: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (builder) => PaymentFormScreen(
-                                type: state.payments[index].type,
-                                payment: state.payments[index],
+                              builder: (builder) => MultiBlocProvider(
+                                providers: [
+                                  BlocProvider.value(value: context.read<AccountsBloc>()),
+                                  BlocProvider.value(value: context.read<CategoriesBloc>()),
+                                  BlocProvider.value(value: context.read<PaymentsBloc>()),
+                                ],
+                                child: PaymentFormScreen(
+                                  type: state.payments[index].type,
+                                  payment: state.payments[index],
+                                ),
                               ),
                             ),
                           );

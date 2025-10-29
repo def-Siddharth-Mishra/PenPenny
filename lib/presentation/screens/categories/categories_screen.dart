@@ -48,7 +48,10 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   onTap: () {
                     showDialog(
                       context: context,
-                      builder: (builder) => CategoryFormDialog(category: category),
+                      builder: (builder) => BlocProvider.value(
+                        value: context.read<CategoriesBloc>(),
+                        child: CategoryFormDialog(category: category),
+                      ),
                     );
                   },
                   leading: CircleAvatar(
@@ -126,7 +129,10 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         onPressed: () {
           showDialog(
             context: context,
-            builder: (builder) => const CategoryFormDialog(),
+            builder: (builder) => BlocProvider.value(
+              value: context.read<CategoriesBloc>(),
+              child: const CategoryFormDialog(),
+            ),
           );
         },
         child: const Icon(Icons.add),

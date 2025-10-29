@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:penpenny/core/events/global_events.dart';
 import 'package:penpenny/core/theme/theme_colors.dart';
 import 'package:penpenny/domain/entities/account.dart';
 import 'package:penpenny/domain/entities/category.dart';
 import 'package:penpenny/domain/entities/payment.dart';
+import 'package:penpenny/presentation/blocs/accounts/accounts_bloc.dart';
+import 'package:penpenny/presentation/blocs/categories/categories_bloc.dart';
+import 'package:penpenny/presentation/blocs/payments/payments_bloc.dart';
 import 'package:penpenny/presentation/widgets/common/app_button.dart';
 import 'package:penpenny/presentation/widgets/common/confirm_dialog.dart';
 import 'package:penpenny/presentation/widgets/common/currency_text.dart';
@@ -47,17 +52,11 @@ class _PaymentFormState extends State<PaymentFormScreen> {
   DateTime _datetime = DateTime.now();
 
   void loadAccounts() {
-    // TODO: Implement with BLoC pattern
-    setState(() {
-      _accounts = [];
-    });
+    context.read<AccountsBloc>().add(LoadAccounts());
   }
 
   void loadCategories() {
-    // TODO: Implement with BLoC pattern
-    setState(() {
-      _categories = [];
-    });
+    context.read<CategoriesBloc>().add(LoadCategories());
   }
 
   void populateState() async {
@@ -128,19 +127,25 @@ class _PaymentFormState extends State<PaymentFormScreen> {
     }
   }
 
-  void handleSaveTransaction(context) async {
-    // TODO: Implement with BLoC pattern
+  void handleSaveTransaction(BuildContext context) async {
+    final payment = Payment(
+      id: _id,
+      account: _account!,
+      category: _category!,
+      amount: _amount,
+      type: _type,
+      datetime: _datetime,
+      title: _title,
+      description: _description,
+    );
+
+    if (_id != null) {
+      context.read<PaymentsBloc>().add(UpdatePayment(payment));
+    } else {
+      context.read<PaymentsBloc>().add(CreatePayment(payment));
+    }
+
     if (widget.onClose != null) {
-      final payment = Payment(
-        id: _id,
-        account: _account!,
-        category: _category!,
-        amount: _amount,
-        type: _type,
-        datetime: _datetime,
-        title: _title,
-        description: _description,
-      );
       widget.onClose!(payment);
     }
     Navigator.of(context).pop();
@@ -165,10 +170,32 @@ class _PaymentFormState extends State<PaymentFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_initialised)
+    if (!_initialised) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
-    return Scaffold(
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<AccountsBloc, AccountsState>(
+          listener: (context, state) {
+            if (state is AccountsLoaded) {
+              setState(() {
+                _accounts = state.accounts;
+              });
+            }
+          },
+        ),
+        BlocListener<CategoriesBloc, CategoriesState>(
+          listener: (context, state) {
+            if (state is CategoriesLoaded) {
+              setState(() {
+                _categories = state.categories;
+              });
+            }
+          },
+        ),
+      ],
+      child: Scaffold(
       appBar: AppBar(
         title: Text(
           "${widget.payment == null ? "New" : "Edit"} Transaction",
@@ -184,7 +211,7 @@ class _PaymentFormState extends State<PaymentFormScreen> {
                       content: "After deleting payment can't be recovered.",
                     ).then((confirmed) {
                       if (confirmed == true) {
-                        // TODO: Implement delete with BLoC pattern
+                        context.read<PaymentsBloc>().add(DeletePayment(_id!));
                         globalEventEmitter.emit(
                           GlobalEventType.paymentUpdate.name,
                         );
@@ -440,8 +467,10 @@ class _PaymentFormState extends State<PaymentFormScreen> {
                                 onPressed: () {
                                   showDialog(
                                     context: context,
-                                    builder: (builder) =>
-                                        const AccountFormDialog(),
+                                    builder: (builder) => BlocProvider.value(
+                                      value: context.read<AccountsBloc>(),
+                                      child: const AccountFormDialog(),
+                                    ),
                                   );
                                 },
                                 child: SizedBox(
@@ -620,8 +649,10 @@ class _PaymentFormState extends State<PaymentFormScreen> {
                                   onPressed: () {
                                     showDialog(
                                       context: context,
-                                      builder: (builder) =>
-                                          const CategoryFormDialog(),
+                                      builder: (builder) => BlocProvider.value(
+                                        value: context.read<CategoriesBloc>(),
+                                        child: const CategoryFormDialog(),
+                                      ),
                                     );
                                   },
                                   child: SizedBox(
@@ -684,8 +715,10 @@ class _PaymentFormState extends State<PaymentFormScreen> {
                                 onLongPress: () {
                                   showDialog(
                                     context: context,
-                                    builder: (builder) =>
-                                        CategoryFormDialog(category: category),
+                                    builder: (builder) => BlocProvider.value(
+                                      value: context.read<CategoriesBloc>(),
+                                      child: CategoryFormDialog(category: category),
+                                    ),
                                   );
                                 },
                                 child: SizedBox(
@@ -737,6 +770,7 @@ class _PaymentFormState extends State<PaymentFormScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

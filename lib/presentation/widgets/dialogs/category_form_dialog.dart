@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:penpenny/core/data/app_icons.dart';
 import 'package:penpenny/core/events/global_events.dart';
 import 'package:penpenny/domain/entities/category.dart';
+import 'package:penpenny/presentation/blocs/categories/categories_bloc.dart';
 import 'package:penpenny/presentation/widgets/common/app_button.dart';
 import 'package:penpenny/presentation/widgets/common/currency_text.dart';
 
@@ -40,7 +42,12 @@ class _CategoryFormState extends State<CategoryFormDialog> {
   }
 
   void onSave(context) async {
-    // TODO: Implement with BLoC pattern
+    if (widget.category != null) {
+      context.read<CategoriesBloc>().add(UpdateCategory(_category));
+    } else {
+      context.read<CategoriesBloc>().add(CreateCategory(_category));
+    }
+    
     if (widget.onSave != null) {
       widget.onSave!();
     }
