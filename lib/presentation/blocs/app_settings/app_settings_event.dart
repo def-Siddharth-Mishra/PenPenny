@@ -19,4 +19,9 @@ class UpdateThemeColor extends AppSettingsEvent {
   UpdateThemeColor(this.color);
 }
 
+class UpdateThemeMode extends AppSettingsEvent {
+  final AppThemeMode themeMode;
+  UpdateThemeMode(this.themeMode);
+}
+
 class ResetSettings extends AppSettingsEvent {}

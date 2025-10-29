@@ -10,10 +10,11 @@ import 'package:penpenny/presentation/blocs/app_settings/app_settings_bloc.dart'
 import 'package:penpenny/presentation/blocs/categories/categories_bloc.dart';
 import 'package:penpenny/presentation/blocs/payments/payments_bloc.dart';
 import 'package:penpenny/presentation/screens/home/widgets/account_slider.dart';
-import 'package:penpenny/presentation/screens/home/widgets/payment_list_item.dart';
+import 'package:penpenny/presentation/screens/home/widgets/budget_alerts.dart';
+import 'package:penpenny/presentation/screens/home/widgets/expense_chart.dart';
+import 'package:penpenny/presentation/screens/home/widgets/income_expense_cards.dart';
+import 'package:penpenny/presentation/screens/home/widgets/recent_transactions.dart';
 import 'package:penpenny/presentation/screens/payment_form/payment_form_screen.dart';
-import 'package:penpenny/presentation/widgets/common/currency_text.dart';
-import 'package:penpenny/core/theme/theme_colors.dart';
 
 String greeting() {
   var hour = DateTime.now().hour;
@@ -98,6 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Header Section
             Container(
               margin: const EdgeInsets.only(left: 15, right: 15, bottom: 15, top: 60),
               child: Column(
@@ -114,6 +116,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
+            
+            // Accounts Slider
             BlocBuilder<AccountsBloc, AccountsState>(
               builder: (context, state) {
                 if (state is AccountsLoaded) {
@@ -122,13 +126,58 @@ class _HomeScreenState extends State<HomeScreen> {
                 return AccountsSlider(accounts: const []);
               },
             ),
+            
             const SizedBox(height: 15),
+            
+            // Income/Expense Cards
+            const IncomeExpenseCards(),
+            
+            // Budget Alerts
+            BlocBuilder<CategoriesBloc, CategoriesState>(
+              builder: (context, categoriesState) {
+                return BlocBuilder<PaymentsBloc, PaymentsState>(
+                  builder: (context, paymentsState) {
+                    if (categoriesState is CategoriesLoaded && paymentsState is PaymentsLoaded) {
+                      return BudgetAlerts(
+                        categories: categoriesState.categories,
+                        payments: paymentsState.payments,
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                );
+              },
+            ),
+            
+            // Expense Chart
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+              child: BlocBuilder<CategoriesBloc, CategoriesState>(
+                builder: (context, categoriesState) {
+                  return BlocBuilder<PaymentsBloc, PaymentsState>(
+                    builder: (context, paymentsState) {
+                      if (categoriesState is CategoriesLoaded && paymentsState is PaymentsLoaded) {
+                        return ExpenseChart(
+                          payments: paymentsState.payments,
+                          categories: categoriesState.categories,
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  );
+                },
+              ),
+            ),
+            
+            const SizedBox(height: 15),
+            
+            // Recent Transactions Header
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 15),
               child: Row(
                 children: [
                   const Text(
-                    "Payments",
+                    "Recent Transactions",
                     style: TextStyle(fontWeight: FontWeight.w600, fontSize: 17),
                   ),
                   const Expanded(child: SizedBox()),
@@ -152,142 +201,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(18),
-                        color: ThemeColors.success.withOpacity(0.2),
-                      ),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text.rich(
-                              TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: "Income",
-                                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 5),
-                            BlocBuilder<PaymentsBloc, PaymentsState>(
-                              builder: (context, state) {
-                                double income = 0;
-                                if (state is PaymentsLoaded) {
-                                  income = state.income;
-                                }
-                                return CurrencyText(
-                                  income,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    color: ThemeColors.success,
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(18),
-                        color: ThemeColors.error.withOpacity(0.2),
-                      ),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text.rich(
-                              TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: "Expense",
-                                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 5),
-                            BlocBuilder<PaymentsBloc, PaymentsState>(
-                              builder: (context, state) {
-                                double expense = 0;
-                                if (state is PaymentsLoaded) {
-                                  expense = state.expense;
-                                }
-                                return CurrencyText(
-                                  expense,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    color: ThemeColors.error,
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            
+            // Recent Transactions List
             BlocBuilder<PaymentsBloc, PaymentsState>(
               builder: (context, state) {
-                if (state is PaymentsLoaded && state.payments.isNotEmpty) {
-                  return ListView.separated(
-                    padding: EdgeInsets.zero,
-                    physics: const NeverScrollableScrollPhysics(),
-                    shrinkWrap: true,
-                    itemBuilder: (BuildContext context, index) {
-                      return PaymentListItem(
-                        payment: state.payments[index],
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (builder) => MultiBlocProvider(
-                                providers: [
-                                  BlocProvider.value(value: context.read<AccountsBloc>()),
-                                  BlocProvider.value(value: context.read<CategoriesBloc>()),
-                                  BlocProvider.value(value: context.read<PaymentsBloc>()),
-                                ],
-                                child: PaymentFormScreen(
-                                  type: state.payments[index].type,
-                                  payment: state.payments[index],
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                    separatorBuilder: (BuildContext context, int index) {
-                      return Container(
-                        width: double.infinity,
-                        color: Colors.grey.withAlpha(25),
-                        height: 1,
-                        margin: const EdgeInsets.only(left: 75, right: 20),
-                      );
-                    },
-                    itemCount: state.payments.length,
+                if (state is PaymentsLoaded) {
+                  return RecentTransactions(
+                    payments: state.payments,
+                    maxItems: 10,
                   );
                 } else {
                   return Container(

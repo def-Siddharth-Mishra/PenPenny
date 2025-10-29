@@ -13,6 +13,7 @@ class AppSettingsBloc extends Bloc<AppSettingsEvent, AppSettingsState> {
     on<UpdateUsername>(_onUpdateUsername);
     on<UpdateCurrency>(_onUpdateCurrency);
     on<UpdateThemeColor>(_onUpdateThemeColor);
+    on<UpdateThemeMode>(_onUpdateThemeMode);
     on<ResetSettings>(_onResetSettings);
   }
 
@@ -61,6 +62,19 @@ class AppSettingsBloc extends Bloc<AppSettingsEvent, AppSettingsState> {
   ) async {
     try {
       await repository.updateThemeColor(event.color);
+      final settings = await repository.getSettings();
+      emit(AppSettingsLoaded(settings));
+    } catch (e) {
+      emit(AppSettingsError(e.toString()));
+    }
+  }
+
+  Future<void> _onUpdateThemeMode(
+    UpdateThemeMode event,
+    Emitter<AppSettingsState> emit,
+  ) async {
+    try {
+      await repository.updateThemeMode(event.themeMode);
       final settings = await repository.getSettings();
       emit(AppSettingsLoaded(settings));
     } catch (e) {

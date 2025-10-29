@@ -21,12 +21,37 @@ class PenPennyApp extends StatelessWidget {
       builder: (context, state) {
         return MaterialApp(
           title: 'PenPenny',
+          themeMode: state.settings.flutterThemeMode,
           theme: ThemeData(
             useMaterial3: true,
-            brightness: MediaQuery.of(context).platformBrightness,
+            brightness: Brightness.light,
             colorScheme: ColorScheme.fromSeed(
               seedColor: state.settings.themeColorValue,
-              brightness: MediaQuery.of(context).platformBrightness,
+              brightness: Brightness.light,
+            ),
+            navigationBarTheme: NavigationBarThemeData(
+              labelTextStyle: WidgetStateProperty.resolveWith(
+                (Set<WidgetState> states) {
+                  TextStyle style = const TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 11,
+                  );
+                  if (states.contains(WidgetState.selected)) {
+                    style = style.merge(
+                      const TextStyle(fontWeight: FontWeight.w600),
+                    );
+                  }
+                  return style;
+                },
+              ),
+            ),
+          ),
+          darkTheme: ThemeData(
+            useMaterial3: true,
+            brightness: Brightness.dark,
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: state.settings.themeColorValue,
+              brightness: Brightness.dark,
             ),
             navigationBarTheme: NavigationBarThemeData(
               labelTextStyle: WidgetStateProperty.resolveWith(
