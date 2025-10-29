@@ -93,8 +93,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SingleChildScrollView(
+    return BlocListener<CategoriesBloc, CategoriesState>(
+      listener: (context, state) {
+        // Force rebuild when categories change
+        if (state is CategoriesLoaded) {
+          debugPrint("Categories loaded in home screen: ${state.categories.length}");
+        }
+      },
+      child: Scaffold(
+        body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -225,6 +232,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onPressed: () => openAddPaymentPage(PaymentType.credit),
         child: const Icon(Icons.add),
       ),
+    ),
     );
   }
 }

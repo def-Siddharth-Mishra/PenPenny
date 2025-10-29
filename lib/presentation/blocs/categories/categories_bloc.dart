@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:penpenny/domain/entities/category.dart';
 import 'package:penpenny/domain/usecases/category/create_category.dart' as category_create_usecase;
@@ -33,8 +34,10 @@ class CategoriesBloc extends Bloc<CategoriesEvent, CategoriesState> {
     try {
       emit(CategoriesLoading());
       final categories = await getAllCategories();
+      debugPrint('Loaded ${categories.length} categories');
       emit(CategoriesLoaded(categories));
     } catch (e) {
+      debugPrint('Error loading categories: $e');
       emit(CategoriesError(e.toString()));
     }
   }
@@ -44,9 +47,12 @@ class CategoriesBloc extends Bloc<CategoriesEvent, CategoriesState> {
     Emitter<CategoriesState> emit,
   ) async {
     try {
-      await createCategory(event.category);
+      debugPrint('Creating category: ${event.category.name}');
+      final createdCategory = await createCategory(event.category);
+      debugPrint('Category created successfully: ${createdCategory.name} with ID: ${createdCategory.id}');
       add(LoadCategories());
     } catch (e) {
+      debugPrint('Error creating category: $e');
       emit(CategoriesError(e.toString()));
     }
   }

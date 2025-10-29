@@ -1,7 +1,6 @@
 import 'package:currency_picker/currency_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:penpenny/data/datasources/database_helper.dart';
 import 'package:penpenny/presentation/blocs/app_settings/app_settings_bloc.dart';
 
 class CurrencyPickerWidget extends StatefulWidget {
@@ -158,7 +157,6 @@ class _CurrencyPickerWidgetState extends State<CurrencyPickerWidget> {
             );
           } else {
             context.read<AppSettingsBloc>().add(UpdateCurrency(_currency!));
-            DatabaseHelper.resetDatabase();
           }
         },
         label: const Row(

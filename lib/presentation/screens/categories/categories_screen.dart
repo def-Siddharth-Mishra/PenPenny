@@ -38,6 +38,39 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           
+          if (state is CategoriesError) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.error,
+                    size: 64,
+                    color: Colors.red,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Error loading categories',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    state.message,
+                    style: const TextStyle(color: Colors.grey),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      context.read<CategoriesBloc>().add(LoadCategories());
+                    },
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            );
+          }
+          
           if (state is CategoriesLoaded && state.categories.isNotEmpty) {
             return ListView.separated(
               itemCount: state.categories.length,
@@ -94,8 +127,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             );
           }
           
-          // Empty state
-          return const Center(
+          if (state is CategoriesLoaded && state.categories.isEmpty) {
+            // Empty state
+            return const Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -123,6 +157,10 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               ],
             ),
           );
+          }
+          
+          // Default case - should not happen
+          return const Center(child: Text('Unknown state'));
         },
       ),
       floatingActionButton: FloatingActionButton(

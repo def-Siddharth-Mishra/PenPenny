@@ -1,9 +1,8 @@
 import 'package:get_it/get_it.dart';
-import 'package:penpenny/data/datasources/database_helper.dart';
-import 'package:penpenny/data/repositories/account_repository_impl.dart';
-import 'package:penpenny/data/repositories/app_settings_repository_impl.dart';
-import 'package:penpenny/data/repositories/category_repository_impl.dart';
-import 'package:penpenny/data/repositories/payment_repository_impl.dart';
+import 'package:penpenny/data/repositories/hive/account_repository_hive_impl.dart';
+import 'package:penpenny/data/repositories/hive/app_settings_repository_hive_impl.dart';
+import 'package:penpenny/data/repositories/hive/category_repository_hive_impl.dart';
+import 'package:penpenny/data/repositories/hive/payment_repository_hive_impl.dart';
 import 'package:penpenny/domain/repositories/account_repository.dart';
 import 'package:penpenny/domain/repositories/app_settings_repository.dart';
 import 'package:penpenny/domain/repositories/category_repository.dart';
@@ -28,21 +27,18 @@ import 'package:penpenny/presentation/blocs/payments/payments_bloc.dart';
 final sl = GetIt.instance;
 
 Future<void> init() async {
-  // Initialize database
-  await DatabaseHelper.database;
-
   // Repositories
   sl.registerLazySingleton<AppSettingsRepository>(
-    () => AppSettingsRepositoryImpl(),
+    () => AppSettingsRepositoryHiveImpl(),
   );
   sl.registerLazySingleton<AccountRepository>(
-    () => AccountRepositoryImpl(),
+    () => AccountRepositoryHiveImpl(),
   );
   sl.registerLazySingleton<CategoryRepository>(
-    () => CategoryRepositoryImpl(),
+    () => CategoryRepositoryHiveImpl(),
   );
   sl.registerLazySingleton<PaymentRepository>(
-    () => PaymentRepositoryImpl(),
+    () => PaymentRepositoryHiveImpl(),
   );
 
   // Use cases
@@ -57,9 +53,9 @@ Future<void> init() async {
   sl.registerLazySingleton(() => category_delete_usecase.DeleteCategory(sl()));
   
   sl.registerLazySingleton(() => GetAllPayments(sl()));
-  sl.registerLazySingleton(() => payment_usecase.CreatePayment(sl()));
-  sl.registerLazySingleton(() => payment_update_usecase.UpdatePayment(sl()));
-  sl.registerLazySingleton(() => payment_delete_usecase.DeletePayment(sl()));
+  sl.registerLazySingleton(() => payment_usecase.CreatePayment(sl(), sl()));
+  sl.registerLazySingleton(() => payment_update_usecase.UpdatePayment(sl(), sl()));
+  sl.registerLazySingleton(() => payment_delete_usecase.DeletePayment(sl(), sl()));
 
   // Blocs
   sl.registerFactory(() => AppSettingsBloc(sl()));

@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:penpenny/presentation/blocs/app_settings/app_settings_bloc.dart';
-import 'package:penpenny/presentation/screens/main/main_screen.dart';
+import 'package:penpenny/presentation/screens/dashboard/dashboard_screen.dart';
 
 class PenPennyApp extends StatelessWidget {
   const PenPennyApp({super.key});
@@ -30,20 +30,20 @@ class PenPennyApp extends StatelessWidget {
               brightness: Brightness.light,
             ),
             navigationBarTheme: NavigationBarThemeData(
-              labelTextStyle: WidgetStateProperty.resolveWith(
-                (Set<WidgetState> states) {
-                  TextStyle style = const TextStyle(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 11,
+              labelTextStyle: WidgetStateProperty.resolveWith((
+                Set<WidgetState> states,
+              ) {
+                TextStyle style = const TextStyle(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 11,
+                );
+                if (states.contains(WidgetState.selected)) {
+                  style = style.merge(
+                    const TextStyle(fontWeight: FontWeight.w600),
                   );
-                  if (states.contains(WidgetState.selected)) {
-                    style = style.merge(
-                      const TextStyle(fontWeight: FontWeight.w600),
-                    );
-                  }
-                  return style;
-                },
-              ),
+                }
+                return style;
+              }),
             ),
           ),
           darkTheme: ThemeData(
@@ -54,23 +54,23 @@ class PenPennyApp extends StatelessWidget {
               brightness: Brightness.dark,
             ),
             navigationBarTheme: NavigationBarThemeData(
-              labelTextStyle: WidgetStateProperty.resolveWith(
-                (Set<WidgetState> states) {
-                  TextStyle style = const TextStyle(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 11,
+              labelTextStyle: WidgetStateProperty.resolveWith((
+                Set<WidgetState> states,
+              ) {
+                TextStyle style = const TextStyle(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 11,
+                );
+                if (states.contains(WidgetState.selected)) {
+                  style = style.merge(
+                    const TextStyle(fontWeight: FontWeight.w600),
                   );
-                  if (states.contains(WidgetState.selected)) {
-                    style = style.merge(
-                      const TextStyle(fontWeight: FontWeight.w600),
-                    );
-                  }
-                  return style;
-                },
-              ),
+                }
+                return style;
+              }),
             ),
           ),
-          home: const MainScreen(),
+          home: const DashboardScreen(),
           localizationsDelegates: const [
             GlobalWidgetsLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,

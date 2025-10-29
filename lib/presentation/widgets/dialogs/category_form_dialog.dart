@@ -22,42 +22,174 @@ class CategoryFormDialog extends StatefulWidget {
 
 class _CategoryFormState extends State<CategoryFormDialog> {
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _budgetController = TextEditingController();
   Category _category = const Category(
     name: "",
     icon: Icons.wallet_outlined,
     color: Colors.pink,
   );
+  
+  CategoriesBloc? _categoriesBloc;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    
+    // Get the bloc reference
+    _categoriesBloc = context.read<CategoriesBloc>();
+  }
 
   @override
   void initState() {
     super.initState();
+    
     if (widget.category != null) {
       _nameController.text = widget.category!.name;
-      _category = widget.category ?? const Category(
+      _budgetController.text = widget.category!.budget == 0 ? "" : widget.category!.budget.toString();
+      _category = widget.category!;
+    } else {
+      _category = const Category(
         name: "",
         icon: Icons.wallet_outlined,
         color: Colors.pink,
       );
     }
+    
+    // Add listeners to sync controllers with category state
+    _nameController.addListener(() {
+      if (_nameController.text != _category.name) {
+        setState(() {
+          _category = _category.copyWith(name: _nameController.text);
+        });
+      }
+    });
+    
+    _budgetController.addListener(() {
+      final budgetText = _budgetController.text;
+      final budgetValue = double.tryParse(budgetText) ?? 0.0;
+      if (budgetValue != _category.budget) {
+        setState(() {
+          _category = _category.copyWith(budget: budgetValue);
+        });
+      }
+    });
   }
 
-  void onSave(context) async {
-    if (widget.category != null) {
-      context.read<CategoriesBloc>().add(UpdateCategory(_category));
-    } else {
-      context.read<CategoriesBloc>().add(CreateCategory(_category));
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _budgetController.dispose();
+    super.dispose();
+  }
+
+  void onSave() async {
+    try {
+      // Ensure the category has the latest values from controllers
+      final finalCategory = _category.copyWith(
+        name: _nameController.text.trim(),
+        budget: double.tryParse(_budgetController.text) ?? 0.0,
+      );
+      
+      debugPrint('Saving category: ${finalCategory.name}, budget: ${finalCategory.budget}');
+      debugPrint('Category icon: ${finalCategory.icon}, color: ${finalCategory.color}');
+      
+      if (_categoriesBloc != null) {
+        if (widget.category != null) {
+          debugPrint('Updating existing category with ID: ${widget.category!.id}');
+          _categoriesBloc!.add(UpdateCategory(finalCategory));
+        } else {
+          debugPrint('Creating new category');
+          _categoriesBloc!.add(CreateCategory(finalCategory));
+        }
+        
+        if (widget.onSave != null) {
+          widget.onSave!();
+        }
+        globalEventEmitter.emit(GlobalEventType.categoryUpdate.name);
+        
+        // Close dialog after dispatching the event
+        if (mounted) {
+          Navigator.pop(context);
+        }
+      } else {
+        debugPrint('CategoriesBloc is null - cannot save category');
+        throw StateError('CategoriesBloc is not available');
+      }
+    } catch (e) {
+      debugPrint('Error saving category: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving category: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
+  }
+
+  void onDelete() async {
+    if (widget.category?.id == null) return;
     
-    if (widget.onSave != null) {
-      widget.onSave!();
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Category'),
+        content: Text('Are you sure you want to delete "${widget.category!.name}"? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    
+    if (confirmed == true) {
+      try {
+        debugPrint('Deleting category with ID: ${widget.category!.id}');
+        _categoriesBloc?.add(DeleteCategory(widget.category!.id!));
+        
+        globalEventEmitter.emit(GlobalEventType.categoryUpdate.name);
+        
+        if (mounted) {
+          Navigator.pop(context);
+        }
+      } catch (e) {
+        debugPrint('Error deleting category: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error deleting category: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     }
-    Navigator.pop(context);
-    globalEventEmitter.emit(GlobalEventType.categoryUpdate.name);
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return BlocListener<CategoriesBloc, CategoriesState>(
+      bloc: _categoriesBloc,
+      listener: (context, state) {
+        if (state is CategoriesError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: ${state.message}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      },
+      child: AlertDialog(
       scrollable: true,
       insetPadding: const EdgeInsets.all(10),
       title: Text(
@@ -87,7 +219,7 @@ class _CategoryFormState extends State<CategoryFormDialog> {
                 const SizedBox(width: 15),
                 Expanded(
                   child: TextFormField(
-                    initialValue: _category.name,
+                    controller: _nameController,
                     decoration: InputDecoration(
                       labelText: 'Name',
                       hintText: 'Enter Category name',
@@ -96,11 +228,7 @@ class _CategoryFormState extends State<CategoryFormDialog> {
                       ),
                       contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
                     ),
-                    onChanged: (String text) {
-                      setState(() {
-                        _category = _category.copyWith(name: text);
-                      });
-                    },
+
                   ),
                 )
               ],
@@ -108,7 +236,7 @@ class _CategoryFormState extends State<CategoryFormDialog> {
             Container(
               padding: const EdgeInsets.only(top: 20),
               child: TextFormField(
-                initialValue: _category.budget == 0 ? "" : _category.budget.toString(),
+                controller: _budgetController,
                 keyboardType: TextInputType.number,
                 inputFormatters: <TextInputFormatter>[
                   FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,4}')),
@@ -126,11 +254,7 @@ class _CategoryFormState extends State<CategoryFormDialog> {
                   ),
                   prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
                 ),
-                onChanged: (String text) {
-                  setState(() {
-                    _category = _category.copyWith(budget: double.parse(text.isEmpty ? "0" : text));
-                  });
-                },
+
               ),
             ),
             const SizedBox(height: 20),
@@ -212,16 +336,33 @@ class _CategoryFormState extends State<CategoryFormDialog> {
         ),
       ),
       actions: [
-        AppButton(
-          height: 45,
-          isFullWidth: true,
-          onPressed: () {
-            onSave(context);
+        if (widget.category != null) ...[
+          AppButton(
+            height: 45,
+            isFullWidth: true,
+            onPressed: onDelete,
+            color: Colors.red,
+            label: "Delete",
+          ),
+          const SizedBox(height: 10),
+        ],
+        ValueListenableBuilder(
+          valueListenable: _nameController,
+          builder: (context, value, child) {
+            final isValid = _nameController.text.trim().isNotEmpty;
+            return AppButton(
+              height: 45,
+              isFullWidth: true,
+              onPressed: isValid ? () {
+                onSave();
+              } : null,
+              color: Theme.of(context).colorScheme.primary,
+              label: "Save",
+            );
           },
-          color: Theme.of(context).colorScheme.primary,
-          label: "Save",
         )
       ],
+    ),
     );
   }
 }

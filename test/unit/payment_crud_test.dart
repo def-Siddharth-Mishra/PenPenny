@@ -6,6 +6,7 @@ import 'package:penpenny/domain/entities/account.dart';
 import 'package:penpenny/domain/entities/category.dart';
 import 'package:penpenny/domain/entities/payment.dart';
 import 'package:penpenny/domain/repositories/payment_repository.dart';
+import 'package:penpenny/domain/repositories/account_repository.dart';
 import 'package:penpenny/domain/usecases/payment/create_payment.dart';
 import 'package:penpenny/domain/usecases/payment/delete_payment.dart';
 import 'package:penpenny/domain/usecases/payment/get_all_payments.dart';
@@ -13,20 +14,22 @@ import 'package:penpenny/domain/usecases/payment/update_payment.dart';
 
 import 'payment_crud_test.mocks.dart';
 
-@GenerateMocks([PaymentRepository])
+@GenerateMocks([PaymentRepository, AccountRepository])
 void main() {
-  late MockPaymentRepository mockRepository;
+  late MockPaymentRepository mockPaymentRepository;
+  late MockAccountRepository mockAccountRepository;
   late CreatePayment createPayment;
   late GetAllPayments getAllPayments;
   late UpdatePayment updatePayment;
   late DeletePayment deletePayment;
 
   setUp(() {
-    mockRepository = MockPaymentRepository();
-    createPayment = CreatePayment(mockRepository);
-    getAllPayments = GetAllPayments(mockRepository);
-    updatePayment = UpdatePayment(mockRepository);
-    deletePayment = DeletePayment(mockRepository);
+    mockPaymentRepository = MockPaymentRepository();
+    mockAccountRepository = MockAccountRepository();
+    createPayment = CreatePayment(mockPaymentRepository, mockAccountRepository);
+    getAllPayments = GetAllPayments(mockPaymentRepository);
+    updatePayment = UpdatePayment(mockPaymentRepository, mockAccountRepository);
+    deletePayment = DeletePayment(mockPaymentRepository, mockAccountRepository);
   });
 
   final testAccount = Account(
@@ -64,56 +67,64 @@ void main() {
   group('Payment CRUD Operations', () {
     test('should create payment successfully', () async {
       // Arrange
-      when(mockRepository.createPayment(any)).thenAnswer((_) async => testPayment);
+      when(mockPaymentRepository.createPayment(any)).thenAnswer((_) async => testPayment);
+      when(mockAccountRepository.getAccountById(any)).thenAnswer((_) async => testAccount);
+      when(mockAccountRepository.updateAccountBalance(any, any)).thenAnswer((_) async => testAccount);
 
       // Act
       final result = await createPayment(testPayment);
 
       // Assert
       expect(result, equals(testPayment));
-      verify(mockRepository.createPayment(testPayment)).called(1);
+      verify(mockPaymentRepository.createPayment(testPayment)).called(1);
     });
 
     test('should get all payments successfully', () async {
       // Arrange
       final payments = [testPayment];
-      when(mockRepository.getAllPayments()).thenAnswer((_) async => payments);
+      when(mockPaymentRepository.getAllPayments()).thenAnswer((_) async => payments);
 
       // Act
       final result = await getAllPayments();
 
       // Assert
       expect(result, equals(payments));
-      verify(mockRepository.getAllPayments()).called(1);
+      verify(mockPaymentRepository.getAllPayments()).called(1);
     });
 
     test('should update payment successfully', () async {
       // Arrange
       final updatedPayment = testPayment.copyWith(amount: 75.0);
-      when(mockRepository.updatePayment(any)).thenAnswer((_) async => updatedPayment);
+      when(mockPaymentRepository.getPaymentById(any)).thenAnswer((_) async => testPayment);
+      when(mockPaymentRepository.updatePayment(any)).thenAnswer((_) async => updatedPayment);
+      when(mockAccountRepository.getAccountById(any)).thenAnswer((_) async => testAccount);
+      when(mockAccountRepository.updateAccountBalance(any, any)).thenAnswer((_) async => testAccount);
 
       // Act
       final result = await updatePayment(updatedPayment);
 
       // Assert
       expect(result, equals(updatedPayment));
-      verify(mockRepository.updatePayment(updatedPayment)).called(1);
+      verify(mockPaymentRepository.updatePayment(updatedPayment)).called(1);
     });
 
     test('should delete payment successfully', () async {
       // Arrange
-      when(mockRepository.deletePayment(any)).thenAnswer((_) async {});
+      when(mockPaymentRepository.getPaymentById(any)).thenAnswer((_) async => testPayment);
+      when(mockPaymentRepository.deletePayment(any)).thenAnswer((_) async {});
+      when(mockAccountRepository.getAccountById(any)).thenAnswer((_) async => testAccount);
+      when(mockAccountRepository.updateAccountBalance(any, any)).thenAnswer((_) async => testAccount);
 
       // Act
       await deletePayment(1);
 
       // Assert
-      verify(mockRepository.deletePayment(1)).called(1);
+      verify(mockPaymentRepository.deletePayment(1)).called(1);
     });
 
     test('should handle create payment error', () async {
       // Arrange
-      when(mockRepository.createPayment(any)).thenThrow(Exception('Database error'));
+      when(mockPaymentRepository.createPayment(any)).thenThrow(Exception('Database error'));
 
       // Act & Assert
       expect(() => createPayment(testPayment), throwsException);
@@ -121,7 +132,7 @@ void main() {
 
     test('should handle get all payments error', () async {
       // Arrange
-      when(mockRepository.getAllPayments()).thenThrow(Exception('Database error'));
+      when(mockPaymentRepository.getAllPayments()).thenThrow(Exception('Database error'));
 
       // Act & Assert
       expect(() => getAllPayments(), throwsException);
@@ -129,7 +140,7 @@ void main() {
 
     test('should handle update payment error', () async {
       // Arrange
-      when(mockRepository.updatePayment(any)).thenThrow(Exception('Database error'));
+      when(mockPaymentRepository.updatePayment(any)).thenThrow(Exception('Database error'));
 
       // Act & Assert
       expect(() => updatePayment(testPayment), throwsException);
@@ -137,7 +148,7 @@ void main() {
 
     test('should handle delete payment error', () async {
       // Arrange
-      when(mockRepository.deletePayment(any)).thenThrow(Exception('Database error'));
+      when(mockPaymentRepository.deletePayment(any)).thenThrow(Exception('Database error'));
 
       // Act & Assert
       expect(() => deletePayment(1), throwsException);

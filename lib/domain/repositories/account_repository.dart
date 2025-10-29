@@ -8,4 +8,6 @@ abstract class AccountRepository {
   Future<void> deleteAccount(int id);
   Future<Account?> getDefaultAccount();
   Future<void> setDefaultAccount(int accountId);
+  Future<double> getTotalBalance();
+  Future<Account> updateAccountBalance(int accountId, double newBalance);
 }
