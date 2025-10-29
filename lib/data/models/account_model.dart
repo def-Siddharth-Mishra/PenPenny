@@ -39,6 +39,7 @@ class AccountModel extends Account {
       'icon': icon.codePoint,
       'color': color.value,
       'isDefault': isDefault ? 1 : 0,
+      'balance': balance,
     };
   }
 

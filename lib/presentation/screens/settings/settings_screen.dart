@@ -1,9 +1,15 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:currency_picker/currency_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:penpenny/data/datasources/database_helper.dart';
+import 'package:penpenny/domain/entities/app_settings.dart';
 import 'package:penpenny/presentation/blocs/app_settings/app_settings_bloc.dart';
 import 'package:penpenny/presentation/widgets/common/app_button.dart';
 import 'package:penpenny/presentation/widgets/common/confirm_dialog.dart';
@@ -18,14 +24,106 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   Future<String> exportData() async {
-    // TODO: Implement export functionality
-    await Future.delayed(const Duration(seconds: 2)); // Simulate export
-    return "/storage/emulated/0/Download/penpenny-backup-${DateTime.now().millisecondsSinceEpoch}.json";
+    try {
+      // Request storage permission on Android
+      if (Platform.isAndroid) {
+        var status = await Permission.storage.status;
+        if (!status.isGranted) {
+          status = await Permission.storage.request();
+          if (!status.isGranted) {
+            throw Exception('Storage permission denied');
+          }
+        }
+      }
+      
+      final db = await DatabaseHelper.database;
+      
+      // Get all data from database
+      final accounts = await db.query('accounts');
+      final categories = await db.query('categories');
+      final payments = await db.query('payments');
+      
+      // Create backup data structure
+      final backupData = {
+        'version': 1,
+        'timestamp': DateTime.now().toIso8601String(),
+        'accounts': accounts,
+        'categories': categories,
+        'payments': payments,
+      };
+      
+      // Convert to JSON
+      final jsonString = jsonEncode(backupData);
+      
+      // Save to file
+      Directory? directory;
+      if (Platform.isAndroid) {
+        // Try Downloads directory first
+        directory = Directory('/storage/emulated/0/Download');
+        if (!await directory.exists()) {
+          // Fallback to external storage
+          directory = await getExternalStorageDirectory();
+          if (directory != null) {
+            directory = Directory('${directory.path}/Download');
+            if (!await directory.exists()) {
+              await directory.create(recursive: true);
+            }
+          }
+        }
+      } else {
+        directory = await getApplicationDocumentsDirectory();
+      }
+      
+      if (directory == null) {
+        throw Exception('Could not access storage directory');
+      }
+      
+      final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+      final file = File('${directory.path}/penpenny_backup_$timestamp.json');
+      
+      await file.writeAsString(jsonString);
+      return file.path;
+    } catch (e) {
+      throw Exception('Failed to export data: $e');
+    }
   }
 
   Future<void> importData(String path) async {
-    // TODO: Implement import functionality
-    await Future.delayed(const Duration(seconds: 2)); // Simulate import
+    try {
+      final file = File(path);
+      final jsonString = await file.readAsString();
+      final backupData = jsonDecode(jsonString);
+      
+      final db = await DatabaseHelper.database;
+      
+      // Clear existing data
+      await db.delete('payments');
+      await db.delete('accounts');
+      await db.delete('categories');
+      
+      // Import accounts
+      if (backupData['accounts'] != null) {
+        for (final account in backupData['accounts']) {
+          await db.insert('accounts', Map<String, dynamic>.from(account));
+        }
+      }
+      
+      // Import categories
+      if (backupData['categories'] != null) {
+        for (final category in backupData['categories']) {
+          await db.insert('categories', Map<String, dynamic>.from(category));
+        }
+      }
+      
+      // Import payments
+      if (backupData['payments'] != null) {
+        for (final payment in backupData['payments']) {
+          await db.insert('payments', Map<String, dynamic>.from(payment));
+        }
+      }
+    } catch (e) {
+      throw Exception('Failed to import data: $e');
+    }
   }
 
   @override
@@ -152,6 +250,111 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Currency? currency = CurrencyService().findByCode(state.settings.currency ?? 'USD');
                 return Text(
                   currency!.name,
+                  style: Theme.of(context).textTheme.bodySmall?.apply(
+                    color: Colors.grey,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                );
+              },
+            ),
+          ),
+          ListTile(
+            dense: true,
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (context) {
+                  return BlocBuilder<AppSettingsBloc, AppSettingsState>(
+                    builder: (context, state) {
+                      return AlertDialog(
+                        title: const Text(
+                          "Theme Mode",
+                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
+                        ),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: AppThemeMode.values.map((mode) {
+                            String title;
+                            IconData icon;
+                            switch (mode) {
+                              case AppThemeMode.system:
+                                title = 'System';
+                                icon = Icons.brightness_auto;
+                                break;
+                              case AppThemeMode.light:
+                                title = 'Light';
+                                icon = Icons.brightness_7;
+                                break;
+                              case AppThemeMode.dark:
+                                title = 'Dark';
+                                icon = Icons.brightness_2;
+                                break;
+                            }
+                            
+                            return RadioListTile<AppThemeMode>(
+                              title: Row(
+                                children: [
+                                  Icon(icon, size: 20),
+                                  const SizedBox(width: 12),
+                                  Text(title),
+                                ],
+                              ),
+                              value: mode,
+                              groupValue: state.settings.themeMode,
+                              onChanged: (AppThemeMode? value) {
+                                if (value != null) {
+                                  context.read<AppSettingsBloc>().add(UpdateThemeMode(value));
+                                  Navigator.of(context).pop();
+                                }
+                              },
+                            );
+                          }).toList(),
+                        ),
+                      );
+                    },
+                  );
+                },
+              );
+            },
+            leading: BlocBuilder<AppSettingsBloc, AppSettingsState>(
+              builder: (context, state) {
+                IconData icon;
+                switch (state.settings.themeMode) {
+                  case AppThemeMode.system:
+                    icon = Icons.brightness_auto;
+                    break;
+                  case AppThemeMode.light:
+                    icon = Icons.brightness_7;
+                    break;
+                  case AppThemeMode.dark:
+                    icon = Icons.brightness_2;
+                    break;
+                }
+                return CircleAvatar(child: Icon(icon));
+              },
+            ),
+            title: Text(
+              'Theme',
+              style: Theme.of(context).textTheme.bodyMedium?.merge(
+                const TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
+              ),
+            ),
+            subtitle: BlocBuilder<AppSettingsBloc, AppSettingsState>(
+              builder: (context, state) {
+                String subtitle;
+                switch (state.settings.themeMode) {
+                  case AppThemeMode.system:
+                    subtitle = 'System';
+                    break;
+                  case AppThemeMode.light:
+                    subtitle = 'Light';
+                    break;
+                  case AppThemeMode.dark:
+                    subtitle = 'Dark';
+                    break;
+                }
+                return Text(
+                  subtitle,
                   style: Theme.of(context).textTheme.bodySmall?.apply(
                     color: Colors.grey,
                     overflow: TextOverflow.ellipsis,

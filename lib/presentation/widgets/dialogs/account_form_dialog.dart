@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 import 'package:penpenny/core/data/app_icons.dart';
@@ -6,6 +7,7 @@ import 'package:penpenny/core/events/global_events.dart';
 import 'package:penpenny/domain/entities/account.dart';
 import 'package:penpenny/presentation/blocs/accounts/accounts_bloc.dart';
 import 'package:penpenny/presentation/widgets/common/app_button.dart';
+import 'package:penpenny/presentation/widgets/common/currency_text.dart';
 
 typedef Callback = void Function();
 
@@ -33,6 +35,7 @@ class _AccountFormState extends State<AccountFormDialog> {
         accountNumber: widget.account!.accountNumber,
         icon: widget.account!.icon,
         color: widget.account!.color,
+        balance: widget.account!.balance,
       );
     } else {
       _account = const Account(
@@ -140,6 +143,32 @@ class _AccountFormState extends State<AccountFormDialog> {
                 onChanged: (text) {
                   setState(() {
                     _account = _account!.copyWith(accountNumber: text);
+                  });
+                },
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.only(bottom: 20),
+              child: TextFormField(
+                keyboardType: TextInputType.number,
+                inputFormatters: <TextInputFormatter>[
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                ],
+                decoration: InputDecoration(
+                  labelText: 'Initial Balance',
+                  hintText: 'Enter initial balance (optional)',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
+                  prefixIcon: Padding(
+                    padding: const EdgeInsets.only(left: 15),
+                    child: CurrencyText(null),
+                  ),
+                  prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+                ),
+                initialValue: _account!.balance == 0 ? "" : _account!.balance.toString(),
+                onChanged: (text) {
+                  setState(() {
+                    _account = _account!.copyWith(balance: double.parse(text.isEmpty ? "0" : text));
                   });
                 },
               ),

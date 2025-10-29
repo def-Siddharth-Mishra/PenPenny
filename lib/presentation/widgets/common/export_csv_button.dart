@@ -17,10 +17,14 @@ class ExportCsvButton extends StatelessWidget {
           return const SizedBox.shrink();
         }
 
-        return ElevatedButton.icon(
+        return IconButton(
           onPressed: () => _exportToCsv(context, state.payments),
           icon: const Icon(Icons.download),
-          label: const Text('Export CSV'),
+          tooltip: 'Export CSV',
+          style: IconButton.styleFrom(
+            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+            foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+          ),
         );
       },
     );
@@ -71,7 +75,7 @@ class ExportCsvButton extends StatelessWidget {
       final time = DateFormat('HH:mm:ss').format(payment.datetime);
       final type = payment.type == PaymentType.credit ? 'Income' : 'Expense';
       final category = _escapeCsvField(payment.category.name);
-      final account = _escapeCsvField(payment.account.holderName ?? 'Unknown');
+      final account = _escapeCsvField(payment.account.holderName.isEmpty ? 'Unknown' : payment.account.holderName);
       final amount = payment.amount.toString();
       final title = _escapeCsvField(payment.title);
       final description = _escapeCsvField(payment.description);

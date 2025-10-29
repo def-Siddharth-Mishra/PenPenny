@@ -6,7 +6,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 class DatabaseHelper {
   static Database? _database;
   static const String _databaseName = 'penpenny.db';
-  static const int _databaseVersion = 1;
+  static const int _databaseVersion = 2;
 
   static Future<Database> get database async {
     if (_database != null) return _database!;
@@ -47,7 +47,8 @@ class DatabaseHelper {
         accountNumber TEXT,
         icon INTEGER NOT NULL,
         color INTEGER NOT NULL,
-        isDefault INTEGER DEFAULT 0
+        isDefault INTEGER DEFAULT 0,
+        balance REAL DEFAULT 0.0
       )
     ''');
 
@@ -81,7 +82,10 @@ class DatabaseHelper {
   }
 
   static Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // Handle database upgrades here
+    if (oldVersion < 2) {
+      // Add balance column to accounts table
+      await db.execute('ALTER TABLE accounts ADD COLUMN balance REAL DEFAULT 0.0');
+    }
   }
 
   static Future<void> _insertDefaultData(Database db) async {
@@ -93,6 +97,7 @@ class DatabaseHelper {
       'icon': Icons.wallet.codePoint,
       'color': Colors.teal.value,
       'isDefault': 1,
+      'balance': 0.0,
     });
 
     // Insert default categories

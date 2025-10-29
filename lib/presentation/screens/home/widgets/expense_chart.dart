@@ -85,9 +85,10 @@ class _ExpenseChartState extends State<ExpenseChart>
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 32),
               Expanded(
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(
                       flex: 2,
@@ -113,7 +114,7 @@ class _ExpenseChartState extends State<ExpenseChart>
                         ),
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 24),
                     Expanded(
                       flex: 1,
                       child: Column(
@@ -139,7 +140,7 @@ class _ExpenseChartState extends State<ExpenseChart>
                                 child: Opacity(
                                   opacity: itemAnimation.value,
                                   child: Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 2),
+                                    padding: const EdgeInsets.symmetric(vertical: 4),
                                     child: Row(
                                       children: [
                                         Container(
@@ -150,11 +151,14 @@ class _ExpenseChartState extends State<ExpenseChart>
                                             shape: BoxShape.circle,
                                           ),
                                         ),
-                                        const SizedBox(width: 8),
+                                        const SizedBox(width: 12),
                                         Expanded(
                                           child: Text(
                                             data.category.name,
-                                            style: const TextStyle(fontSize: 12),
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w500,
+                                            ),
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
