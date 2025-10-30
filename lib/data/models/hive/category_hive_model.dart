@@ -4,10 +4,7 @@ import 'package:penpenny/domain/entities/category.dart';
 
 part 'category_hive_model.g.dart';
 
-// Helper method to create IconData from codePoint
-IconData _createIconData(int codePoint) {
-  return IconData(codePoint, fontFamily: 'MaterialIcons');
-}
+
 
 @HiveType(typeId: 1)
 class CategoryHiveModel extends HiveObject {
@@ -53,7 +50,7 @@ class CategoryHiveModel extends HiveObject {
     return Category(
       id: id,
       name: name,
-      icon: _createIconData(iconCodePoint),
+      icon: IconData(iconCodePoint, fontFamily: 'MaterialIcons'),
       color: Color(colorValue),
       budget: budget,
       expense: expense,
