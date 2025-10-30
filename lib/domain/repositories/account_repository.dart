@@ -10,4 +10,5 @@ abstract class AccountRepository {
   Future<void> setDefaultAccount(int accountId);
   Future<double> getTotalBalance();
   Future<Account> updateAccountBalance(int accountId, double newBalance);
+  Future<void> recalculateAccountBalances();
 }

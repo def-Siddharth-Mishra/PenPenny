@@ -7,6 +7,9 @@ class GetAllAccounts {
   GetAllAccounts(this.repository);
 
   Future<List<Account>> call() async {
+    // Recalculate account balances before returning accounts
+    await repository.recalculateAccountBalances();
+    
     return await repository.getAllAccounts();
   }
 }

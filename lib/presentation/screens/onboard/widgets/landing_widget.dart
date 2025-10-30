@@ -57,6 +57,46 @@ class LandingWidget extends StatelessWidget {
                 ],
               ),
               const Expanded(child: SizedBox()),
+              
+              // Progress indicator
+              Row(
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.outline.withOpacity(0.3),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.outline.withOpacity(0.3),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    "Step 1 of 3",
+                    style: theme.textTheme.bodySmall!.apply(
+                      color: theme.textTheme.bodySmall!.color!.withOpacity(0.6),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
               const Text("*Since this application is currently in beta, be prepared for UI changes and unexpected behaviours."),
               const SizedBox(height: 20),
               Container(

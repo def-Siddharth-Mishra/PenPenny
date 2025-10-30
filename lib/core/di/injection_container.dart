@@ -3,10 +3,12 @@ import 'package:penpenny/data/repositories/hive/account_repository_hive_impl.dar
 import 'package:penpenny/data/repositories/hive/app_settings_repository_hive_impl.dart';
 import 'package:penpenny/data/repositories/hive/category_repository_hive_impl.dart';
 import 'package:penpenny/data/repositories/hive/payment_repository_hive_impl.dart';
+import 'package:penpenny/data/services/budget_service_impl.dart';
 import 'package:penpenny/domain/repositories/account_repository.dart';
 import 'package:penpenny/domain/repositories/app_settings_repository.dart';
 import 'package:penpenny/domain/repositories/category_repository.dart';
 import 'package:penpenny/domain/repositories/payment_repository.dart';
+import 'package:penpenny/domain/services/budget_service.dart';
 import 'package:penpenny/domain/usecases/account/create_account.dart' as account_usecase;
 import 'package:penpenny/domain/usecases/account/delete_account.dart' as account_delete_usecase;
 import 'package:penpenny/domain/usecases/account/get_all_accounts.dart';
@@ -39,6 +41,14 @@ Future<void> init() async {
   );
   sl.registerLazySingleton<PaymentRepository>(
     () => PaymentRepositoryHiveImpl(),
+  );
+
+  // Services
+  sl.registerLazySingleton<BudgetService>(
+    () => BudgetServiceImpl(
+      categoryRepository: sl(),
+      paymentRepository: sl(),
+    ),
   );
 
   // Use cases

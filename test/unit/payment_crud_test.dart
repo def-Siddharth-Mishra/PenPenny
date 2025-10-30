@@ -140,7 +140,9 @@ void main() {
 
     test('should handle update payment error', () async {
       // Arrange
+      when(mockPaymentRepository.getPaymentById(any)).thenAnswer((_) async => testPayment);
       when(mockPaymentRepository.updatePayment(any)).thenThrow(Exception('Database error'));
+      when(mockAccountRepository.getAccountById(any)).thenAnswer((_) async => testAccount);
 
       // Act & Assert
       expect(() => updatePayment(testPayment), throwsException);
@@ -148,7 +150,9 @@ void main() {
 
     test('should handle delete payment error', () async {
       // Arrange
+      when(mockPaymentRepository.getPaymentById(any)).thenAnswer((_) async => testPayment);
       when(mockPaymentRepository.deletePayment(any)).thenThrow(Exception('Database error'));
+      when(mockAccountRepository.getAccountById(any)).thenAnswer((_) async => testAccount);
 
       // Act & Assert
       expect(() => deletePayment(1), throwsException);

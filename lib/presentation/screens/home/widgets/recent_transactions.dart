@@ -6,6 +6,7 @@ import 'package:penpenny/presentation/blocs/categories/categories_bloc.dart';
 import 'package:penpenny/presentation/blocs/payments/payments_bloc.dart';
 import 'package:penpenny/presentation/screens/home/widgets/dismissible_payment_item.dart';
 import 'package:penpenny/presentation/screens/payment_form/payment_form_screen.dart';
+import 'package:penpenny/presentation/widgets/optimized/optimized_list_view.dart';
 
 class RecentTransactions extends StatelessWidget {
   final List<Payment> payments;
@@ -21,26 +22,26 @@ class RecentTransactions extends StatelessWidget {
   Widget build(BuildContext context) {
     final recentPayments = payments.take(maxItems).toList();
 
-    if (recentPayments.isEmpty) {
-      return Container(
+    return OptimizedListView<Payment>(
+      items: recentPayments,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.zero,
+      addRepaintBoundaries: true,
+      cacheExtent: 500, // Pre-cache items for smooth scrolling
+      emptyWidget: Container(
         padding: const EdgeInsets.symmetric(vertical: 25),
         alignment: Alignment.center,
         child: const Text("No payments!"),
-      );
-    }
-
-    return ListView.separated(
-      padding: EdgeInsets.zero,
-      physics: const NeverScrollableScrollPhysics(),
-      shrinkWrap: true,
-      itemBuilder: (BuildContext context, index) {
+      ),
+      itemBuilder: (context, payment, index) {
         return DismissiblePaymentItem(
-          payment: recentPayments[index],
-          onTap: () => _navigateToEditPayment(context, recentPayments[index]),
+          payment: payment,
+          onTap: () => _navigateToEditPayment(context, payment),
           onDelete: (payment) => _deletePayment(context, payment),
         );
       },
-      separatorBuilder: (BuildContext context, int index) {
+      separatorBuilder: (context, index) {
         return Container(
           width: double.infinity,
           color: Colors.grey.withAlpha(25),
@@ -48,7 +49,6 @@ class RecentTransactions extends StatelessWidget {
           margin: const EdgeInsets.only(left: 75, right: 20),
         );
       },
-      itemCount: recentPayments.length,
     );
   }
 

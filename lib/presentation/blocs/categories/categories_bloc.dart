@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:penpenny/core/logging/app_logger.dart';
 import 'package:penpenny/domain/entities/category.dart';
 import 'package:penpenny/domain/usecases/category/create_category.dart' as category_create_usecase;
 import 'package:penpenny/domain/usecases/category/delete_category.dart' as category_delete_usecase;
@@ -34,11 +34,11 @@ class CategoriesBloc extends Bloc<CategoriesEvent, CategoriesState> {
     try {
       emit(CategoriesLoading());
       final categories = await getAllCategories();
-      debugPrint('Loaded ${categories.length} categories');
+      AppLogger.info('Loaded ${categories.length} categories', tag: 'CategoriesBloc');
       emit(CategoriesLoaded(categories));
-    } catch (e) {
-      debugPrint('Error loading categories: $e');
-      emit(CategoriesError(e.toString()));
+    } catch (e, stackTrace) {
+      AppLogger.error('Error loading categories', tag: 'CategoriesBloc', error: e, stackTrace: stackTrace);
+      emit(CategoriesError('Failed to load categories. Please try again.'));
     }
   }
 
@@ -47,13 +47,13 @@ class CategoriesBloc extends Bloc<CategoriesEvent, CategoriesState> {
     Emitter<CategoriesState> emit,
   ) async {
     try {
-      debugPrint('Creating category: ${event.category.name}');
+      AppLogger.info('Creating category: ${event.category.name}', tag: 'CategoriesBloc');
       final createdCategory = await createCategory(event.category);
-      debugPrint('Category created successfully: ${createdCategory.name} with ID: ${createdCategory.id}');
+      AppLogger.info('Category created successfully: ${createdCategory.name} with ID: ${createdCategory.id}', tag: 'CategoriesBloc');
       add(LoadCategories());
-    } catch (e) {
-      debugPrint('Error creating category: $e');
-      emit(CategoriesError(e.toString()));
+    } catch (e, stackTrace) {
+      AppLogger.error('Error creating category', tag: 'CategoriesBloc', error: e, stackTrace: stackTrace);
+      emit(CategoriesError('Failed to create category. Please try again.'));
     }
   }
 
@@ -64,8 +64,9 @@ class CategoriesBloc extends Bloc<CategoriesEvent, CategoriesState> {
     try {
       await updateCategory(event.category);
       add(LoadCategories());
-    } catch (e) {
-      emit(CategoriesError(e.toString()));
+    } catch (e, stackTrace) {
+      AppLogger.error('Error updating category', tag: 'CategoriesBloc', error: e, stackTrace: stackTrace);
+      emit(CategoriesError('Failed to update category. Please try again.'));
     }
   }
 
@@ -76,8 +77,9 @@ class CategoriesBloc extends Bloc<CategoriesEvent, CategoriesState> {
     try {
       await deleteCategory(event.categoryId);
       add(LoadCategories());
-    } catch (e) {
-      emit(CategoriesError(e.toString()));
+    } catch (e, stackTrace) {
+      AppLogger.error('Error deleting category', tag: 'CategoriesBloc', error: e, stackTrace: stackTrace);
+      emit(CategoriesError('Failed to delete category. Please try again.'));
     }
   }
 }

@@ -100,6 +100,7 @@ class AccountRepositoryHiveImpl implements AccountRepository {
     return account.toEntity();
   }
 
+  @override
   Future<void> recalculateAccountBalances() async {
     final paymentsBox = HiveService.paymentsBoxInstance;
     final accountsBox = HiveService.accountsBoxInstance;

@@ -7,6 +7,7 @@ import 'package:penpenny/presentation/blocs/accounts/accounts_bloc.dart';
 import 'package:penpenny/presentation/widgets/common/confirm_dialog.dart';
 import 'package:penpenny/presentation/widgets/common/currency_text.dart';
 import 'package:penpenny/presentation/widgets/dialogs/account_form_dialog.dart';
+import 'package:penpenny/presentation/widgets/optimized/optimized_list_view.dart';
 
 String maskAccount(String value, [int lastLength = 4]) {
   if (value.length < 4) return value;
@@ -53,11 +54,12 @@ class _AccountsScreenState extends State<AccountsScreen> {
           }
           
           if (state is AccountsLoaded && state.accounts.isNotEmpty) {
-            return ListView.builder(
+            return OptimizedListView<Account>(
+              items: state.accounts,
               padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-              itemCount: state.accounts.length,
-              itemBuilder: (builder, index) {
-                Account account = state.accounts[index];
+              addRepaintBoundaries: true,
+              cacheExtent: 800, // Pre-cache for smooth scrolling
+              itemBuilder: (context, account, index) {
                 GlobalKey accKey = GlobalKey();
                 return Stack(
                   children: [
@@ -233,10 +235,38 @@ class _AccountsScreenState extends State<AccountsScreen> {
                   ],
                 );
               },
+              emptyWidget: const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.account_balance,
+                      size: 64,
+                      color: Colors.grey,
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      'No accounts yet',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Add your first account to get started',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             );
           }
           
-          // Empty state
+          // Loading or error state - show empty widget
           return const Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,

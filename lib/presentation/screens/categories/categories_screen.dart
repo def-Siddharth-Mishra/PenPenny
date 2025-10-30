@@ -4,6 +4,7 @@ import 'package:penpenny/core/events/global_events.dart';
 import 'package:penpenny/domain/entities/category.dart';
 import 'package:penpenny/presentation/blocs/categories/categories_bloc.dart';
 import 'package:penpenny/presentation/widgets/dialogs/category_form_dialog.dart';
+import 'package:penpenny/presentation/widgets/optimized/optimized_list_view.dart';
 
 class CategoriesScreen extends StatefulWidget {
   const CategoriesScreen({super.key});
@@ -72,10 +73,11 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
           }
           
           if (state is CategoriesLoaded && state.categories.isNotEmpty) {
-            return ListView.separated(
-              itemCount: state.categories.length,
-              itemBuilder: (builder, index) {
-                Category category = state.categories[index];
+            return OptimizedListView<Category>(
+              items: state.categories,
+              addRepaintBoundaries: true,
+              cacheExtent: 600, // Pre-cache for smooth scrolling
+              itemBuilder: (context, category, index) {
                 double expenseProgress = (category.expense) / (category.budget);
                 return ListTile(
                   onTap: () {
@@ -116,7 +118,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
                 );
               },
-              separatorBuilder: (BuildContext context, int index) {
+              separatorBuilder: (context, index) {
                 return Container(
                   width: double.infinity,
                   color: Colors.grey.withAlpha(25),
@@ -124,39 +126,121 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   margin: const EdgeInsets.only(left: 75, right: 20),
                 );
               },
+              emptyWidget: const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.category,
+                      size: 64,
+                      color: Colors.grey,
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      'No categories yet',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Add categories to organize your expenses',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             );
           }
           
-          if (state is CategoriesLoaded && state.categories.isEmpty) {
-            // Empty state
-            return const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.category,
-                  size: 64,
-                  color: Colors.grey,
-                ),
-                SizedBox(height: 16),
-                Text(
-                  'No categories yet',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
+          // Handle empty state through OptimizedListView's emptyWidget
+          if (state is CategoriesLoaded) {
+            return OptimizedListView<Category>(
+              items: state.categories,
+              addRepaintBoundaries: true,
+              cacheExtent: 600,
+              itemBuilder: (context, category, index) {
+                double expenseProgress = (category.expense) / (category.budget);
+                return ListTile(
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (builder) => BlocProvider.value(
+                        value: context.read<CategoriesBloc>(),
+                        child: CategoryFormDialog(category: category),
+                      ),
+                    );
+                  },
+                  leading: CircleAvatar(
+                    backgroundColor: category.color.withAlpha(51),
+                    child: Icon(category.icon, color: category.color),
                   ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'Add categories to organize your expenses',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey,
+                  title: Text(
+                    category.name,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodyMedium?.merge(
+                      const TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
+                    ),
                   ),
+                  subtitle: expenseProgress.isFinite
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: LinearProgressIndicator(
+                            value: expenseProgress,
+                            semanticsLabel: expenseProgress.toString(),
+                          ),
+                        )
+                      : Text(
+                          "No budget",
+                          style: Theme.of(context).textTheme.bodySmall?.apply(
+                            color: Colors.grey,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                );
+              },
+              separatorBuilder: (context, index) {
+                return Container(
+                  width: double.infinity,
+                  color: Colors.grey.withAlpha(25),
+                  height: 1,
+                  margin: const EdgeInsets.only(left: 75, right: 20),
+                );
+              },
+              emptyWidget: const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.category,
+                      size: 64,
+                      color: Colors.grey,
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      'No categories yet',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Add categories to organize your expenses',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          );
+              ),
+            );
           }
           
           // Default case - should not happen

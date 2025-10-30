@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:penpenny/core/data/app_icons.dart';
 import 'package:penpenny/core/events/global_events.dart';
+import 'package:penpenny/core/logging/app_logger.dart';
+import 'package:penpenny/core/validation/validators.dart';
 import 'package:penpenny/domain/entities/category.dart';
 import 'package:penpenny/presentation/blocs/categories/categories_bloc.dart';
 import 'package:penpenny/presentation/widgets/common/app_button.dart';
@@ -90,15 +92,28 @@ class _CategoryFormState extends State<CategoryFormDialog> {
         budget: double.tryParse(_budgetController.text) ?? 0.0,
       );
       
-      debugPrint('Saving category: ${finalCategory.name}, budget: ${finalCategory.budget}');
-      debugPrint('Category icon: ${finalCategory.icon}, color: ${finalCategory.color}');
+      // Validate the category
+      final validationResult = CategoryValidator.validate(finalCategory);
+      if (validationResult.hasErrors) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(validationResult.errors.values.first),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+      
+      AppLogger.info('Saving category: ${finalCategory.name}, budget: ${finalCategory.budget}', tag: 'CategoryFormDialog');
       
       if (_categoriesBloc != null) {
         if (widget.category != null) {
-          debugPrint('Updating existing category with ID: ${widget.category!.id}');
+          AppLogger.info('Updating existing category with ID: ${widget.category!.id}', tag: 'CategoryFormDialog');
           _categoriesBloc!.add(UpdateCategory(finalCategory));
         } else {
-          debugPrint('Creating new category');
+          AppLogger.info('Creating new category', tag: 'CategoryFormDialog');
           _categoriesBloc!.add(CreateCategory(finalCategory));
         }
         
@@ -112,15 +127,15 @@ class _CategoryFormState extends State<CategoryFormDialog> {
           Navigator.pop(context);
         }
       } else {
-        debugPrint('CategoriesBloc is null - cannot save category');
+        AppLogger.error('CategoriesBloc is null - cannot save category', tag: 'CategoryFormDialog');
         throw StateError('CategoriesBloc is not available');
       }
-    } catch (e) {
-      debugPrint('Error saving category: $e');
+    } catch (e, stackTrace) {
+      AppLogger.error('Error saving category', tag: 'CategoryFormDialog', error: e, stackTrace: stackTrace);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error saving category: $e'),
+          const SnackBar(
+            content: Text('Failed to save category. Please try again.'),
             backgroundColor: Colors.red,
           ),
         );

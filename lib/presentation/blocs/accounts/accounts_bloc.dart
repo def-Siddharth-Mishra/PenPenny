@@ -1,4 +1,6 @@
+import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:penpenny/core/logging/app_logger.dart';
 import 'package:penpenny/domain/entities/account.dart';
 import 'package:penpenny/domain/usecases/account/create_account.dart' as account_create_usecase;
 import 'package:penpenny/domain/usecases/account/delete_account.dart' as account_delete_usecase;
@@ -19,7 +21,7 @@ class AccountsBloc extends Bloc<AccountsEvent, AccountsState> {
     required this.createAccount,
     required this.updateAccount,
     required this.deleteAccount,
-  }) : super(AccountsInitial()) {
+  }) : super(const AccountsInitial()) {
     on<LoadAccounts>(_onLoadAccounts);
     on<CreateAccount>(_onCreateAccount);
     on<UpdateAccount>(_onUpdateAccount);
@@ -31,11 +33,30 @@ class AccountsBloc extends Bloc<AccountsEvent, AccountsState> {
     Emitter<AccountsState> emit,
   ) async {
     try {
-      emit(AccountsLoading());
+      emit(const AccountsLoading());
       final accounts = await getAllAccounts();
-      emit(AccountsLoaded(accounts));
-    } catch (e) {
-      emit(AccountsError(e.toString()));
+      
+      // Calculate total balance and find default account
+      double totalBalance = 0;
+      Account? defaultAccount;
+      
+      for (final account in accounts) {
+        totalBalance += account.balance;
+        if (account.isDefault) {
+          defaultAccount = account;
+        }
+      }
+      
+      AppLogger.info('Loaded ${accounts.length} accounts with total balance: $totalBalance', tag: 'AccountsBloc');
+      
+      emit(AccountsLoaded(
+        accounts: accounts,
+        defaultAccount: defaultAccount,
+        totalBalance: totalBalance,
+      ));
+    } catch (e, stackTrace) {
+      AppLogger.error('Error loading accounts', tag: 'AccountsBloc', error: e, stackTrace: stackTrace);
+      emit(AccountsError('Failed to load accounts. Please try again.'));
     }
   }
 
@@ -46,8 +67,9 @@ class AccountsBloc extends Bloc<AccountsEvent, AccountsState> {
     try {
       await createAccount(event.account);
       add(LoadAccounts());
-    } catch (e) {
-      emit(AccountsError(e.toString()));
+    } catch (e, stackTrace) {
+      AppLogger.error('Error creating account', tag: 'AccountsBloc', error: e, stackTrace: stackTrace);
+      emit(const AccountsError('Failed to create account. Please try again.'));
     }
   }
 
@@ -58,8 +80,9 @@ class AccountsBloc extends Bloc<AccountsEvent, AccountsState> {
     try {
       await updateAccount(event.account);
       add(LoadAccounts());
-    } catch (e) {
-      emit(AccountsError(e.toString()));
+    } catch (e, stackTrace) {
+      AppLogger.error('Error updating account', tag: 'AccountsBloc', error: e, stackTrace: stackTrace);
+      emit(const AccountsError('Failed to update account. Please try again.'));
     }
   }
 
@@ -70,8 +93,9 @@ class AccountsBloc extends Bloc<AccountsEvent, AccountsState> {
     try {
       await deleteAccount(event.accountId);
       add(LoadAccounts());
-    } catch (e) {
-      emit(AccountsError(e.toString()));
+    } catch (e, stackTrace) {
+      AppLogger.error('Error deleting account', tag: 'AccountsBloc', error: e, stackTrace: stackTrace);
+      emit(const AccountsError('Failed to delete account. Please try again.'));
     }
   }
 }
