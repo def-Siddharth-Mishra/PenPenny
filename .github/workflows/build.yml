@@ -34,9 +34,11 @@ jobs:
   deploy_to_releases:
     needs: build_and_release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Download release APK
         uses: actions/download-artifact@v4
@@ -44,21 +46,11 @@ jobs:
           name: release-apk
 
       - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ github.run_number }}
-          release_name: Release ${{ github.run_number }}
-      - name: Upload Release Asset
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./app-release.apk
-          asset_name: app-release-v${{ github.run_number }}.apk
-          asset_content_type: application/zip
+        run: |
+          gh release create v${{ github.run_number }} \
+            --title "Release ${{ github.run_number }}" \
+            --notes "Automated release from GitHub Actions" \
+            ./app-release.apk
 
