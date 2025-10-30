@@ -4,7 +4,22 @@ import 'package:penpenny/domain/entities/account.dart';
 
 part 'account_hive_model.g.dart';
 
-
+// Helper to create IconData that can be tree-shaken
+class IconDataHelper {
+  static const IconData _defaultIcon = Icons.account_balance_wallet;
+  
+  static IconData fromCodePoint(int codePoint) {
+    // Use a switch or map to return const IconData instances
+    // This allows Flutter to tree-shake properly
+    switch (codePoint) {
+      case 0xe047: return Icons.account_balance_wallet;
+      case 0xe0c8: return Icons.credit_card;
+      case 0xe227: return Icons.savings;
+      case 0xe8c4: return Icons.account_balance;
+      default: return const IconData(0xe047, fontFamily: 'MaterialIcons'); // Default wallet icon
+    }
+  }
+}
 
 @HiveType(typeId: 0)
 class AccountHiveModel extends HiveObject {
@@ -72,7 +87,7 @@ class AccountHiveModel extends HiveObject {
       name: name,
       holderName: holderName,
       accountNumber: accountNumber,
-      icon: IconData(iconCodePoint, fontFamily: 'MaterialIcons'),
+      icon: IconDataHelper.fromCodePoint(iconCodePoint),
       color: Color(colorValue),
       isDefault: isDefault,
       balance: balance,

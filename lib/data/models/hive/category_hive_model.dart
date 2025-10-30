@@ -4,7 +4,23 @@ import 'package:penpenny/domain/entities/category.dart';
 
 part 'category_hive_model.g.dart';
 
-
+// Helper to create IconData that can be tree-shaken
+class IconDataHelper {
+  static const IconData _defaultIcon = Icons.category;
+  
+  static IconData fromCodePoint(int codePoint) {
+    // Use a switch or map to return const IconData instances
+    // This allows Flutter to tree-shake properly
+    switch (codePoint) {
+      case 0xe57e: return Icons.category;
+      case 0xe56c: return Icons.shopping_cart;
+      case 0xe57f: return Icons.restaurant;
+      case 0xe530: return Icons.local_gas_station;
+      case 0xe559: return Icons.movie;
+      default: return const IconData(0xe57e, fontFamily: 'MaterialIcons'); // Default category icon
+    }
+  }
+}
 
 @HiveType(typeId: 1)
 class CategoryHiveModel extends HiveObject {
@@ -50,7 +66,7 @@ class CategoryHiveModel extends HiveObject {
     return Category(
       id: id,
       name: name,
-      icon: IconData(iconCodePoint, fontFamily: 'MaterialIcons'),
+      icon: IconDataHelper.fromCodePoint(iconCodePoint),
       color: Color(colorValue),
       budget: budget,
       expense: expense,
